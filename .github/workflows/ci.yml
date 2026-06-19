@@ -23,7 +23,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Create .env for CI
-        run: cp .env.example .env
+        run: |
+          cp .env.example .env
+          echo "DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/debate" >> .env
+          echo "REDIS_URL=redis://redis:6379/0" >> .env
       - name: Start stack
         run: docker compose up -d --build
       - name: Wait for API to be ready
