@@ -15,7 +15,7 @@ jobs:
       - run: pip install -e ".[dev]"
       - run: ruff check .
       - run: mypy app
-      - run: pytest
+      - run: pytest --cov=app --cov-report=term-missing --cov-fail-under=90
 
   integration:
     runs-on: ubuntu-latest

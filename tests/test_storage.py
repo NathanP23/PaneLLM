@@ -77,6 +77,11 @@ async def test_update_session_status(db_session: AsyncSession) -> None:
     assert fetched.status == "running"
 
 
+async def test_update_session_status_raises_for_missing(db_session: AsyncSession) -> None:
+    with pytest.raises(ValueError, match="not found"):
+        await repositories.update_session_status(db_session, "nonexistent", "running")
+
+
 # ---------------------------------------------------------------------------
 # API endpoints (real DB round-trip via SQLite)
 # ---------------------------------------------------------------------------
