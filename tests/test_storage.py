@@ -125,3 +125,90 @@ async def test_get_debate_returns_404_for_missing(
 ) -> None:
     response = await api_client.get("/v1/debates/no-such-id", headers=api_key_header)
     assert response.status_code == 404
+
+
+# ---------------------------------------------------------------------------
+# Repository: participant, answer, critique+scores, judgment
+# ---------------------------------------------------------------------------
+
+async def test_save_participant(db_session: AsyncSession) -> None:
+    await repositories.create_session(
+        db=db_session, session_id="s1", prompt="p", max_rounds=1, config={}
+    )
+    participant = await repositories.save_participant(
+        db=db_session, session_id="s1",
+        provider="mock", model="mock/default", role="debater",
+    )
+    assert participant.session_id == "s1"
+    assert participant.role == "debater"
+
+
+async def test_save_answer(db_session: AsyncSession) -> None:
+    await repositories.create_session(
+        db=db_session, session_id="s2", prompt="p", max_rounds=1, config={}
+    )
+    participant = await repositories.save_participant(
+        db=db_session, session_id="s2",
+        provider="mock", model="mock/default", role="debater",
+    )
+    answer = await repositories.save_answer(
+        db=db_session,
+        session_id="s2",
+        participant_id=participant.id,
+        round_number=0,
+        content="My answer.",
+        prompt_tokens=10,
+        completion_tokens=5,
+        latency_ms=200,
+    )
+    assert answer.round_number == 0
+    assert answer.content == "My answer."
+
+
+async def test_save_critique_and_scores(db_session: AsyncSession) -> None:
+    await repositories.create_session(
+        db=db_session, session_id="s3", prompt="p", max_rounds=2, config={}
+    )
+    reviewer = await repositories.save_participant(
+        db=db_session, session_id="s3",
+        provider="mock", model="mock/default", role="debater",
+    )
+    target_participant = await repositories.save_participant(
+        db=db_session, session_id="s3",
+        provider="mock", model="mock/default", role="debater",
+    )
+    target_answer = await repositories.save_answer(
+        db=db_session, session_id="s3", participant_id=target_participant.id,
+        round_number=0, content="Target answer.", prompt_tokens=5,
+        completion_tokens=5, latency_ms=100,
+    )
+    critique = await repositories.save_critique(
+        db=db_session,
+        session_id="s3",
+        round_number=1,
+        reviewer_id=reviewer.id,
+        target_answer_id=target_answer.id,
+        content="Good but incomplete.",
+        scores=[{"dimension": "correctness", "value": 8, "rationale": "Mostly right."}],
+    )
+    assert critique.content == "Good but incomplete."
+
+
+async def test_save_judgment(db_session: AsyncSession) -> None:
+    await repositories.create_session(
+        db=db_session, session_id="s4", prompt="p", max_rounds=1, config={}
+    )
+    judgment = await repositories.save_judgment(
+        db=db_session,
+        session_id="s4",
+        final_answer="The answer is 42.",
+        reasoning_summary="All models agreed.",
+        confidence_score=9.0,
+        strongest_contributions={},
+        detected_disagreements={},
+        corrected_mistakes={},
+        score_summary={},
+        caveats={},
+        verification_status="verified",
+    )
+    assert judgment.final_answer == "The answer is 42."
