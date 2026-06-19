@@ -6,6 +6,8 @@ ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
 
 COPY pyproject.toml ./
 COPY app ./app
+COPY alembic ./alembic
+COPY alembic.ini ./
 
 RUN pip install --no-cache-dir .
 
