@@ -22,6 +22,8 @@ jobs:
     needs: test
     steps:
       - uses: actions/checkout@v4
+      - name: Create .env for CI
+        run: cp .env.example .env
       - name: Start stack
         run: docker compose up -d --build
       - name: Wait for API to be ready
