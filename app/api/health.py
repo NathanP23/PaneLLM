@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException, status
+
+from app.storage.db import check_db
 
 router = APIRouter(tags=["health"])
 
@@ -15,6 +17,9 @@ async def healthz() -> dict[str, str]:
 
 @router.get("/readyz")
 async def readyz() -> dict[str, str]:
-    """Readiness: dependencies are reachable. Checks Postgres/Redis once they land (M3/M4)."""
-    # ponytail: no deps to check yet; extend when DB/Redis are wired.
+    """Readiness: Postgres is reachable. Redis check added in M4."""
+    if not await check_db():
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="db unavailable"
+        )
     return {"status": "ready"}
